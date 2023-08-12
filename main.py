@@ -14,35 +14,38 @@ async def read_body(receive):
 
     return json.loads(body)
 
+class App:
+    async def __call__(self, scope, receive, send):
+        """
+        Echo the request body back in an HTTP response.
+        """
+        body = {}
+        if scope["method"] == "POST" or scope["method"] == "PUT":
+            body = await read_body(receive)
 
-async def app(scope, receive, send):
-    """
-    Echo the request body back in an HTTP response.
-    """
-    body = {}
-    if scope["method"] == "POST" or scope["method"] == "PUT":
-        body = await read_body(receive)
+        response = json.dumps({
+            "message": "Request received successfully!!!!",
+            "meta": {
+                "served_by": "uv_loop"
+            },
+            "person": {
+                "id": 1,
+                **body
+            }
+        })
 
-    response = json.dumps({
-        "message": "Request received successfully!",
-        "meta": {
-            "served_by": "uv_loop"
-        },
-        "person": {
-            "id": 1,
-            **body
-        }
-    })
+        await send({
+            'type': 'http.response.start',
+            'status': 200,
+            'headers': [
+                (b'content-type', b'applicaton/json'),
+                (b'content-length', str(len(response)).encode("utf-8"))
+            ]
+        })
+        await send({
+            'type': 'http.response.body',
+            'body': response.encode("utf-8"),
+        })
 
-    await send({
-        'type': 'http.response.start',
-        'status': 200,
-        'headers': [
-            (b'content-type', b'applicaton/json'),
-            (b'content-length', str(len(response)).encode("utf-8"))
-        ]
-    })
-    await send({
-        'type': 'http.response.body',
-        'body': response.encode("utf-8"),
-    })
+
+app = App()
