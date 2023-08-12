@@ -1,27 +1,29 @@
 import json
 
-async def read_body(receive):
-    """
-    Read and return the entire body from an incoming ASGI message.
-    """
-    body = b''
-    more_body = True
-
-    while more_body:
-        message = await receive()
-        body += message.get('body', b'')
-        more_body = message.get('more_body', False)
-
-    return json.loads(body)
 
 class App:
+    @staticmethod
+    async def read_body(receive):
+        """
+        Read and return the entire body from an incoming ASGI message.
+        """
+        body = b''
+        more_body = True
+
+        while more_body:
+            message = await receive()
+            body += message.get('body', b'')
+            more_body = message.get('more_body', False)
+
+        return json.loads(body)
+
     async def __call__(self, scope, receive, send):
         """
         Echo the request body back in an HTTP response.
         """
         body = {}
         if scope["method"] == "POST" or scope["method"] == "PUT":
-            body = await read_body(receive)
+            body = await self.read_body(receive)
 
         response = json.dumps({
             "message": "Request received successfully!!!!",
